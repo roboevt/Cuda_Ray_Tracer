@@ -1,0 +1,4 @@
+/home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/home/roboevt/Downloads/clion-2021.3.4/bin/ninja/linux/ninja -DCMAKE_CUDA_COMPILER=/usr/local/cuda-11.6/bin/nvcc -G Ninja /home/roboevt/dev/cuda/RayTracer
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/roboevt/dev/cuda/RayTracer/cmake-build-debug
