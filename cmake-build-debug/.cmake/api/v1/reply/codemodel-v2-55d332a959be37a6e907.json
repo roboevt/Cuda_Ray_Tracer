@@ -9,7 +9,7 @@
 					"jsonFile" : "directory-.-Debug-f5ebdc15457944623624.json",
 					"minimumCMakeVersion" : 
 					{
-						"string" : "3.21"
+						"string" : "3.8"
 					},
 					"projectIndex" : 0,
 					"source" : ".",
@@ -39,7 +39,7 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "RayTracer::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-RayTracer-Debug-04c4baf641557e3ba934.json",
+					"jsonFile" : "target-RayTracer-Debug-ca6c51b9ff1489d42df8.json",
 					"name" : "RayTracer",
 					"projectIndex" : 0
 				}

@@ -72,9 +72,24 @@ build rebuild_cache: phony CMakeFiles/rebuild_cache.util
 
 build cmake_object_order_depends_target_RayTracer: phony || CMakeFiles/RayTracer.dir
 
-build CMakeFiles/RayTracer.dir/main.cu.o: CUDA_COMPILER__RayTracer_Debug /home/roboevt/dev/cuda/RayTracer/main.cu || cmake_object_order_depends_target_RayTracer
-  DEP_FILE = CMakeFiles/RayTracer.dir/main.cu.o.d
+build CMakeFiles/RayTracer.dir/main.cpp.o: CXX_COMPILER__RayTracer_Debug /home/roboevt/dev/cuda/RayTracer/main.cpp || cmake_object_order_depends_target_RayTracer
+  DEP_FILE = CMakeFiles/RayTracer.dir/main.cpp.o.d
+  FLAGS = -g
+  INCLUDES = -I/usr/local/cuda-11.6/include
+  OBJECT_DIR = CMakeFiles/RayTracer.dir
+  OBJECT_FILE_DIR = CMakeFiles/RayTracer.dir
+
+build CMakeFiles/RayTracer.dir/Tracer.cu.o: CUDA_COMPILER__RayTracer_Debug /home/roboevt/dev/cuda/RayTracer/Tracer.cu || cmake_object_order_depends_target_RayTracer
+  DEP_FILE = CMakeFiles/RayTracer.dir/Tracer.cu.o.d
   FLAGS = -g --generate-code=arch=compute_52,code=[compute_52,sm_52] -std=c++14
+  INCLUDES = -I/usr/local/cuda-11.6/include
+  OBJECT_DIR = CMakeFiles/RayTracer.dir
+  OBJECT_FILE_DIR = CMakeFiles/RayTracer.dir
+
+build CMakeFiles/RayTracer.dir/RayTracer.cpp.o: CXX_COMPILER__RayTracer_Debug /home/roboevt/dev/cuda/RayTracer/RayTracer.cpp || cmake_object_order_depends_target_RayTracer
+  DEP_FILE = CMakeFiles/RayTracer.dir/RayTracer.cpp.o.d
+  FLAGS = -g
+  INCLUDES = -I/usr/local/cuda-11.6/include
   OBJECT_DIR = CMakeFiles/RayTracer.dir
   OBJECT_FILE_DIR = CMakeFiles/RayTracer.dir
 
@@ -86,9 +101,10 @@ build CMakeFiles/RayTracer.dir/main.cu.o: CUDA_COMPILER__RayTracer_Debug /home/r
 #############################################
 # Link the executable CMakeFiles/RayTracer.dir/cmake_device_link.o
 
-build CMakeFiles/RayTracer.dir/cmake_device_link.o: CUDA_EXECUTABLE_DEVICE_LINKER__RayTracer_Debug CMakeFiles/RayTracer.dir/main.cu.o
+build CMakeFiles/RayTracer.dir/cmake_device_link.o: CXX_EXECUTABLE_DEVICE_LINKER__RayTracer_Debug CMakeFiles/RayTracer.dir/main.cpp.o CMakeFiles/RayTracer.dir/Tracer.cu.o CMakeFiles/RayTracer.dir/RayTracer.cpp.o
   LANGUAGE_COMPILE_FLAGS = -g --generate-code=arch=compute_52,code=[compute_52,sm_52]
   LINK_LIBRARIES = -lGL -lglfw -lcudadevrt -lcudart_static -lrt -lpthread -ldl
+  LINK_PATH = -L/usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs  -L/usr/local/cuda-11.6/targets/x86_64-linux/lib
   OBJECT_DIR = CMakeFiles/RayTracer.dir
   TARGET_FILE = CMakeFiles/RayTracer.dir/cmake_device_link.o
 
@@ -99,9 +115,10 @@ build CMakeFiles/RayTracer.dir/cmake_device_link.o: CUDA_EXECUTABLE_DEVICE_LINKE
 #############################################
 # Link the executable RayTracer
 
-build RayTracer: CUDA_EXECUTABLE_LINKER__RayTracer_Debug CMakeFiles/RayTracer.dir/main.cu.o CMakeFiles/RayTracer.dir/cmake_device_link.o
-  FLAGS = -g --generate-code=arch=compute_52,code=[compute_52,sm_52]
+build RayTracer: CXX_EXECUTABLE_LINKER__RayTracer_Debug CMakeFiles/RayTracer.dir/main.cpp.o CMakeFiles/RayTracer.dir/Tracer.cu.o CMakeFiles/RayTracer.dir/RayTracer.cpp.o CMakeFiles/RayTracer.dir/cmake_device_link.o
+  FLAGS = -g
   LINK_LIBRARIES = -lGL  -lglfw  -lcudadevrt  -lcudart_static  -lrt  -lpthread  -ldl
+  LINK_PATH = -L/usr/local/cuda-11.6/targets/x86_64-linux/lib/stubs   -L/usr/local/cuda-11.6/targets/x86_64-linux/lib
   OBJECT_DIR = CMakeFiles/RayTracer.dir
   POST_BUILD = :
   PRE_LINK = :
@@ -128,14 +145,14 @@ build all: phony RayTracer
 #############################################
 # Re-run CMake if any of its inputs changed.
 
-build build.ninja: RERUN_CMAKE | ../CMakeLists.txt /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeCUDAInformation.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeCommonLanguageInclude.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeGenericSystem.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeInitializeConfigs.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeSystemSpecificInformation.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeSystemSpecificInitialize.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/Compiler/CMakeCommonCompilerMacros.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/Compiler/NVIDIA-CUDA.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/Platform/Linux.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.21.1/CMakeCUDACompiler.cmake CMakeFiles/3.21.1/CMakeSystem.cmake
+build build.ninja: RERUN_CMAKE | ../CMakeLists.txt /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeCUDAInformation.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeCXXInformation.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeCommonLanguageInclude.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeGenericSystem.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeInitializeConfigs.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeLanguageInformation.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeSystemSpecificInformation.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeSystemSpecificInitialize.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/Compiler/CMakeCommonCompilerMacros.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/Compiler/GNU-CXX.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/Compiler/GNU.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/Compiler/NVIDIA-CUDA.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/Platform/Linux-GNU-CXX.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/Platform/Linux-GNU.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/Platform/Linux.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.21.1/CMakeCUDACompiler.cmake CMakeFiles/3.21.1/CMakeCXXCompiler.cmake CMakeFiles/3.21.1/CMakeSystem.cmake
   pool = console
 
 
 #############################################
 # A missing CMake input file is not an error.
 
-build ../CMakeLists.txt /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeCUDAInformation.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeCommonLanguageInclude.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeGenericSystem.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeInitializeConfigs.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeSystemSpecificInformation.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeSystemSpecificInitialize.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/Compiler/CMakeCommonCompilerMacros.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/Compiler/NVIDIA-CUDA.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/Platform/Linux.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.21.1/CMakeCUDACompiler.cmake CMakeFiles/3.21.1/CMakeSystem.cmake: phony
+build ../CMakeLists.txt /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeCUDAInformation.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeCXXInformation.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeCommonLanguageInclude.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeGenericSystem.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeInitializeConfigs.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeLanguageInformation.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeSystemSpecificInformation.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/CMakeSystemSpecificInitialize.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/Compiler/CMakeCommonCompilerMacros.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/Compiler/GNU-CXX.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/Compiler/GNU.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/Compiler/NVIDIA-CUDA.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/Platform/Linux-GNU-CXX.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/Platform/Linux-GNU.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/Platform/Linux.cmake /home/roboevt/Downloads/clion-2021.3.4/bin/cmake/linux/share/cmake-3.21/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.21.1/CMakeCUDACompiler.cmake CMakeFiles/3.21.1/CMakeCXXCompiler.cmake CMakeFiles/3.21.1/CMakeSystem.cmake: phony
 
 
 #############################################
