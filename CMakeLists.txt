@@ -5,7 +5,6 @@ set(CMAKE_CUDA_STANDARD 14)
 set(CMAKE_CUDA_COMPILER /usr/local/cuda-11.6/bin/nvcc)
 
 include_directories(/usr/local/cuda-11.6/include)
-#find_package(CUDAToolkit)
 add_executable(RayTracer main.cpp Tracer.cu RayTracer.cpp RayTracer.h)
 
 set_property(TARGET RayTracer PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)

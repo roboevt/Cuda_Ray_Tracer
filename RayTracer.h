@@ -11,19 +11,19 @@
 #include <string>
 #include <GLFW/glfw3.h>
 
-#include <cuda_gl_interop.h>
 
 //https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__INTEROP.html
 //https://github.com/phrb/intro-cuda/blob/master/src/cuda-samples/2_Graphics/bindlessTexture/bindlessTexture.cpp
 class Window {
     GLFWwindow* window;
     GLuint openGLPixelBuffer;
+public:
     int width, height;
     std::string name;
-public:
     Window(int width, int height, std::string name);
     GLuint getGLBuffer();
     int displayFrame();
+    void setKeyCallback(GLFWkeyfun callback);
     ~Window();
 };
 
@@ -40,11 +40,19 @@ struct Sphere {
 };
 
 class RayTracer {
+    Window* window;
     std::vector<Sphere> spheres;
+    int samples;
 public:
-    void init(GLuint openGLPixelBuffer);
+    RayTracer(Window* window);
     void addSphere(Sphere sphere);
+    void addSpheres(Sphere* spheres, int numSpheres);
+    void setSamples(int samples);
     void renderFrame(bool clearFrame);
+    static void keyPressCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+    int getWidth() {return window->width;}
+    int getHeight() {return window->height;}
+    void init();
 };
 
 

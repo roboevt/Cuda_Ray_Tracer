@@ -51,13 +51,14 @@ __device__  vec3 vec3::randomInUnitSphere(curandState* state) {
     return temp;
 }
 
-__host__ __device__ CudaColor::CudaColor(float r, float g, float b) : r(r), g(g), b(b), samples(0) {}
+__host__ __device__ CudaColor::CudaColor(float r, float g, float b) : r(r), g(g), b(b), samples(1) {}
 __host__ __device__ CudaColor::CudaColor(float r, float g, float b, int samples) : r(r), g(g), b(b), samples(samples) {}
 __host__ __device__ CudaColor  CudaColor::operator+(const CudaColor other) const { return CudaColor(this->r + other.r, this->g + other.g, this->b + other.b, this->samples + other.samples + 1); }
 __host__ __device__ void CudaColor::operator+=(const CudaColor other) { this->r += other.r; this->g += other.g; this->b += other.b; this->samples += other.samples + 1; }
 __host__ __device__ CudaColor CudaColor::operator-(const CudaColor other) const { return CudaColor(this->r - other.r, this->g - other.g, this->b - other.b, this->samples - other.samples + 1); }
 __host__ __device__ void CudaColor::operator-=(const CudaColor other) { this->r -= other.r; this->g -= other.g; this->b -= other.b; this->samples -= other.samples + 1; }
 __host__ __device__ CudaColor CudaColor::operator*(const float scale) const { return CudaColor(this->r * scale, this->g * scale, this->b * scale, this->samples); }
+__host__ __device__ bool CudaColor::operator==(const CudaColor other) {return this->r == other.r & this->g == other.g & this->b == other.b;}
 __host__ __device__ CudaColor CudaColor::output() { return CudaColor(clamp(this->r / this->samples, 0.0f, 1.0f), clamp(this->g / this->samples, 0.0f, 1.0f), clamp(this->b / this->samples, 0.0f, 1.0f)); }
 __host__ __device__ float4 CudaColor::floatOutput() {
     CudaColor outputCol = this->output();
@@ -130,7 +131,7 @@ __device__ void World::checkRay(Ray ray, HitRecord* record) {
     }
 }
 
-__device__ __host__ World::~World() {
+__device__ __host__ World::~World() {  // TODO free device memory
     //cudaFree(deviceSpheres);
 }
 
@@ -186,9 +187,9 @@ __global__ void renderFrameKernel(float4 *out_data, CudaColor *colorBuffer, cura
 
     for (int s = 0; s < samples; s++) {
         colorBuffer[pixelIndex] += shade(cameraRay, world, bounceLimit,
-                                         &states[pixelIndex]);  // Could add check for background and break
+                                         &states[pixelIndex]);
     }
-    out_data[pixelIndex] = colorBuffer[pixelIndex].floatOutput();  // Could add check for background and break
+    out_data[pixelIndex] = colorBuffer[pixelIndex].floatOutput();
 }
 
 CudaTracer::CudaTracer(World world, Camera camera, GLuint openGLPixelBuffer) : world(world), camera(camera), numPixels(camera.width * camera.height), tileWidth(16), tileHeight(16) {  // TODO magic tileWidth/height
@@ -203,7 +204,8 @@ CudaTracer::CudaTracer(World world, Camera camera, GLuint openGLPixelBuffer) : w
 CudaTracer::CudaTracer() : camera(vec3(0,0,0), 1.0f, 1920, 1080), tileWidth(16), tileHeight(16) {}
 
 void CudaTracer::setWorld(World wold) {this->world = world;}
-void CudaTracer::setCamera(Camera camera) {this->camera = camera; this->numPixels = camera.width * camera.height;}
+void CudaTracer::setCamera(Camera camera) { this->camera = camera; this->numPixels = camera.width * camera.height;}
+Camera CudaTracer::getCamera() {return camera;}
 //void CudaTracer::setGLPixelBuffer(GLuint openGLPixelBuffer) {this->openGLPixelBuffer = openGLPixelBuffer;}
 void CudaTracer::setSamples(int samples) {this->numSamples = samples;}
 

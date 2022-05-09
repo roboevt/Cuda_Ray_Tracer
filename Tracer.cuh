@@ -47,6 +47,7 @@ struct CudaColor {
     __host__ __device__ CudaColor operator-(const CudaColor other) const;
     __host__ __device__ void operator-=(const CudaColor other);
     __host__ __device__ CudaColor operator*(const float scale) const;
+    __host__ __device__ bool operator==(const CudaColor other);
     __host__ __device__ CudaColor output();
     __host__ __device__ float4 floatOutput();
 };
@@ -131,6 +132,9 @@ public:
     void init();
     void setWorld(World wold);
     void setCamera(Camera camera);
+    Camera getCamera();
+    int getWidth() {return camera.width;}
+    int getHeight() {return camera.height;}
     void setGLPixelBuffer(GLuint openGLPixelBuffer);
     void setSamples(int samples);
     void renderFrame(bool clearFrame);

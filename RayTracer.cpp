@@ -7,7 +7,7 @@
 
 namespace {
     CudaTracer tracer;
-    CudaColor backgroundColor(.5f,.5f,.5f);
+    CudaColor backgroundColor(.05f,.05f,.05f);
 }
 
 Color::Color(float r, float g, float b) : r(r), g(g), b(b) {}
@@ -45,29 +45,70 @@ int Window::displayFrame() {
     glfwPollEvents();
     return 0;
 }
+
+void Window::setKeyCallback(GLFWkeyfun callback) {
+    glfwSetKeyCallback(window, callback);
+}
+
 Window::~Window() {
     glDeleteBuffersARB(1, &openGLPixelBuffer);
 }
 
-void RayTracer::init(GLuint openGLPixelBuffer) {
-    size_t numSpheres = spheres.size();
-    CudaSphere* cudaSpheres;
-    cudaSpheres = new CudaSphere[numSpheres];
-    for(int i = 0; i < numSpheres; i++) {
-        cudaSpheres[i] = toCudaSphere(spheres[i]);
-    }
-    World world(numSpheres, cudaSpheres, &backgroundColor);
-    tracer.setWorld(world);
-    Camera camera(vec3(0,.5f,0), 1.0f, 1920,1080);
-    tracer = CudaTracer(world, camera, openGLPixelBuffer);
-    tracer.setSamples(10);  // TODO parameter
+RayTracer::RayTracer(Window *window){
+    RayTracer::window = window;
 }
 
-void RayTracer::addSphere(Sphere sphere) {
-    spheres.push_back(sphere);
+void RayTracer::addSphere(Sphere sphere) {spheres.push_back(sphere); }
+void RayTracer::addSpheres(Sphere* spheres, int numSpheres) {
+    std::copy(spheres, spheres + numSpheres, std::back_inserter(this->spheres));
 }
+
+void RayTracer::setSamples(int samples) {this->samples = samples; }
 
 void RayTracer::renderFrame(bool clearFrame) {
     tracer.renderFrame(clearFrame);
 }
 
+void RayTracer::keyPressCallback(GLFWwindow *window, int key, int scancode,
+                                 int action, int mods) {
+    Camera cam = tracer.getCamera();
+    if(action == GLFW_REPEAT) {  // TODO takes a bit to activate
+        switch(key) {
+            case GLFW_KEY_R:
+                cam.zoom +=.1f;
+                break;
+            case GLFW_KEY_F:
+                cam.zoom -=.1f;
+                break;
+            case GLFW_KEY_W:
+                cam.origin.z+=.1f;
+                break;
+            case GLFW_KEY_A:
+                cam.origin.x -= .1f;
+                break;
+            case GLFW_KEY_D:
+                cam.origin.x +=.1f;
+                break;
+            case GLFW_KEY_S:
+                cam.origin.z -=.1f;
+                break;
+            default:
+                break;
+        }
+    }
+    tracer.setCamera(Camera(cam.origin, cam.zoom, tracer.getWidth(), tracer.getHeight()));
+}
+
+void RayTracer::init() {
+    size_t numSpheres = this->spheres.size();
+    CudaSphere* cudaSpheres;
+    cudaSpheres = new CudaSphere[numSpheres];
+    for(int i = 0; i < numSpheres; i++) {
+        cudaSpheres[i] = toCudaSphere(this->spheres[i]);
+    }
+    World world(numSpheres, cudaSpheres, &backgroundColor);
+    tracer.setWorld(world);
+    Camera cudaCam(vec3(0, 0.5f, 0), 1.0f, this->window->width, this->window->height);
+    tracer = CudaTracer(world, cudaCam, this->window->getGLBuffer());
+    tracer.setSamples(this->samples);
+}
