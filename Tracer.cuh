@@ -30,6 +30,7 @@ struct vec3 {
     __host__ __device__ vec3 operator*(const float scale) const;
     __host__ __device__ void operator*=(const float scale);
     __host__ __device__ float operator*(const vec3 other) const;  // dot product
+    __host__ __device__ vec3 cross(const vec3 other) const;
     __host__ __device__ float magnitudeSquared() const;
     __host__ __device__ float magnitude() const;
     __host__ __device__ vec3 normalized() const;
@@ -47,7 +48,11 @@ struct CudaColor {
     __host__ __device__ CudaColor operator-(const CudaColor other) const;
     __host__ __device__ void operator-=(const CudaColor other);
     __host__ __device__ CudaColor operator*(const float scale) const;
+    __host__ __device__ void operator*=(const float scale);
+    __host__ __device__ CudaColor operator*(const CudaColor other) const;
     __host__ __device__ bool operator==(const CudaColor other);
+    __host__ __device__ void sample();
+    __host__ __device__ void sample(int samples);
     __host__ __device__ CudaColor output();
     __host__ __device__ float4 floatOutput();
 };
@@ -98,15 +103,17 @@ public:
     __host__ World();
     __host__ void setSpheres(CudaSphere* spheresToCopy, size_t numSpheres);
     __host__ void setBackgroundColor(CudaColor* backgroundColorIn);
-    __device__ void checkRay(Ray ray, HitRecord* record);
+    __device__ void checkRay(Ray ray, HitRecord* record) const;
     __device__ __host__ ~World();
 };
 
 struct Camera {
-    vec3 origin;
+    Ray ray;
     float zoom;
     int width, height;
-    Camera(vec3 origin, float zoom, int width, int height);
+    Camera(Ray ray, float zoom, int width, int height);
+    vec3 getForward();
+    vec3 getSide();
 };
 
 __device__ CudaColor shade(Ray ray, World world, int bouncesRemaining, curandState* state);
@@ -122,17 +129,16 @@ class CudaTracer {
     CudaColor* cudaColorBuffer;
     curandState* curandStates;
     //GLuint openGLPixelBuffer;
-    dim3 blocks, threads;
+    dim3 blocks, threadsPerBlock;
     World world;
-    Camera camera;
     int numSamples, bounceLimit, numPixels, tileWidth, tileHeight;
 public:
+    Camera camera;
     CudaTracer(World world, Camera camera, GLuint openGLPixelBuffer);
     CudaTracer();
     void init();
     void setWorld(World wold);
     void setCamera(Camera camera);
-    Camera getCamera();
     int getWidth() {return camera.width;}
     int getHeight() {return camera.height;}
     void setGLPixelBuffer(GLuint openGLPixelBuffer);

@@ -43,7 +43,7 @@ rule CXX_COMPILER__RayTracer_Debug
 # Rule for linking CXX executable.
 
 rule CXX_EXECUTABLE_DEVICE_LINKER__RayTracer_Debug
-  command = /usr/local/cuda-11.6/bin/nvcc -forward-unknown-to-host-compiler $LANGUAGE_COMPILE_FLAGS $LINK_FLAGS -Xcompiler=-fPIC -Wno-deprecated-gpu-targets -shared -dlink $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES -L"/usr/lib/x86_64-linux-gnu" -L"/lib/x86_64-linux-gnu"
+  command = /usr/local/cuda-11.6/bin/nvcc -forward-unknown-to-host-compiler $LANGUAGE_COMPILE_FLAGS $LINK_FLAGS -Xcompiler=-fPIC -Wno-deprecated-gpu-targets -shared -dlink $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES
   description = Linking CXX executable $TARGET_FILE
   restat = $RESTAT
 

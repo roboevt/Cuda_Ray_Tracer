@@ -7,7 +7,7 @@
 
 namespace {
     CudaTracer tracer;
-    CudaColor backgroundColor(.05f,.05f,.05f);
+    CudaColor backgroundColor(.10f,.10f,.10f);
 }
 
 Color::Color(float r, float g, float b) : r(r), g(g), b(b) {}
@@ -65,38 +65,47 @@ void RayTracer::addSpheres(Sphere* spheres, int numSpheres) {
 
 void RayTracer::setSamples(int samples) {this->samples = samples; }
 
+void RayTracer::update(std::chrono::duration<float> timestep) {
+    vec3 camDirection(0,0,0);
+    if(glfwGetKey(window->window, GLFW_KEY_W) == GLFW_PRESS) {
+        camDirection += tracer.camera.getForward(); }
+    if(glfwGetKey(window->window, GLFW_KEY_S) == GLFW_PRESS) {
+        camDirection += tracer.camera.getForward() * -1.0f; }
+    if(glfwGetKey(window->window, GLFW_KEY_A) == GLFW_PRESS) {
+        camDirection += tracer.camera.getSide(); }
+    if(glfwGetKey(window->window, GLFW_KEY_D) == GLFW_PRESS) {
+        camDirection += tracer.camera.getSide() * -1.0f; }
+    if(glfwGetKey(window->window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+        camDirection += vec3(0,1.0f,0); }
+    if(glfwGetKey(window->window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
+        camDirection += vec3(0,1.0f,0); }
+    if(glfwGetKey(window->window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+        camDirection += vec3(0,-1.0f,0); }
+    if(glfwGetKey(window->window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) {
+        camDirection += vec3(0,-1.0f,0); }
+    if(glfwGetKey(window->window, GLFW_KEY_R) == GLFW_PRESS) {
+        tracer.camera.zoom += 1.0f * timestep.count(); }
+    if(glfwGetKey(window->window, GLFW_KEY_F) == GLFW_PRESS) {
+        tracer.camera.zoom -= 1.0f * timestep.count(); }
+    tracer.camera.ray.origin += camDirection * timestep.count();
+    std::cout << timestep.count() << "s\n";
+}
+
 void RayTracer::renderFrame(bool clearFrame) {
     tracer.renderFrame(clearFrame);
 }
 
-void RayTracer::keyPressCallback(GLFWwindow *window, int key, int scancode,
-                                 int action, int mods) {
-    Camera cam = tracer.getCamera();
-    if(action == GLFW_REPEAT) {  // TODO takes a bit to activate
-        switch(key) {
-            case GLFW_KEY_R:
-                cam.zoom +=.1f;
-                break;
-            case GLFW_KEY_F:
-                cam.zoom -=.1f;
-                break;
-            case GLFW_KEY_W:
-                cam.origin.z+=.1f;
-                break;
-            case GLFW_KEY_A:
-                cam.origin.x -= .1f;
-                break;
-            case GLFW_KEY_D:
-                cam.origin.x +=.1f;
-                break;
-            case GLFW_KEY_S:
-                cam.origin.z -=.1f;
-                break;
-            default:
-                break;
-        }
+void RayTracer::loop() {
+    using namespace std::chrono;
+    time_point<steady_clock> previousFrame = steady_clock::now();
+    renderFrame(true);
+    while(!window->displayFrame()) {
+        time_point<steady_clock> currentFrame = steady_clock::now();
+        duration<float> frameTime = currentFrame - previousFrame;
+        previousFrame = currentFrame;
+        update(frameTime);
+        renderFrame(true);
     }
-    tracer.setCamera(Camera(cam.origin, cam.zoom, tracer.getWidth(), tracer.getHeight()));
 }
 
 void RayTracer::init() {
@@ -108,7 +117,7 @@ void RayTracer::init() {
     }
     World world(numSpheres, cudaSpheres, &backgroundColor);
     tracer.setWorld(world);
-    Camera cudaCam(vec3(0, 0.5f, 0), 1.0f, this->window->width, this->window->height);
+    Camera cudaCam(Ray(vec3(0, 0.5f, 0),vec3(0,0,1.0f)), 1.0f, this->window->width, this->window->height);
     tracer = CudaTracer(world, cudaCam, this->window->getGLBuffer());
     tracer.setSamples(this->samples);
 }

@@ -36,6 +36,7 @@ __host__ __device__ void vec3::operator-=(const vec3 other) { this->x -= other.x
 __host__ __device__ vec3 vec3::operator*(const float scale) const { return vec3(this->x * scale, this->y * scale, this->z * scale); };
 __host__ __device__ void vec3::operator*=(const float scale) { this->x *= scale; this->y *= scale; this->z *= scale; };
 __host__ __device__ float vec3::operator*(const vec3 other) const { return this->x * other.x + this->y * other.y + this->z * other.z; }  // dot product
+__host__ __device__ vec3 vec3::cross(const vec3 other) const { return vec3(y * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x); }
 __host__ __device__ float vec3::magnitudeSquared() const { return (this->x * this->x) + (this->y * this->y) + (this->z * this->z);}
 __host__ __device__ float vec3::magnitude() const { return sqrt(this->magnitudeSquared()); }
 __host__ __device__ vec3 vec3::normalized() const { float mag = this->magnitude(); return vec3(x/mag,y/mag,z/mag);}
@@ -53,13 +54,18 @@ __device__  vec3 vec3::randomInUnitSphere(curandState* state) {
 
 __host__ __device__ CudaColor::CudaColor(float r, float g, float b) : r(r), g(g), b(b), samples(1) {}
 __host__ __device__ CudaColor::CudaColor(float r, float g, float b, int samples) : r(r), g(g), b(b), samples(samples) {}
-__host__ __device__ CudaColor  CudaColor::operator+(const CudaColor other) const { return CudaColor(this->r + other.r, this->g + other.g, this->b + other.b, this->samples + other.samples + 1); }
-__host__ __device__ void CudaColor::operator+=(const CudaColor other) { this->r += other.r; this->g += other.g; this->b += other.b; this->samples += other.samples + 1; }
-__host__ __device__ CudaColor CudaColor::operator-(const CudaColor other) const { return CudaColor(this->r - other.r, this->g - other.g, this->b - other.b, this->samples - other.samples + 1); }
-__host__ __device__ void CudaColor::operator-=(const CudaColor other) { this->r -= other.r; this->g -= other.g; this->b -= other.b; this->samples -= other.samples + 1; }
+__host__ __device__ CudaColor  CudaColor::operator+(const CudaColor other) const { return CudaColor(this->r + other.r, this->g + other.g, this->b + other.b, this->samples + other.samples); }
+__host__ __device__ void CudaColor::operator+=(const CudaColor other) { this->r += other.r; this->g += other.g; this->b += other.b; this->samples += other.samples; }
+__host__ __device__ CudaColor CudaColor::operator-(const CudaColor other) const { return CudaColor(this->r - other.r, this->g - other.g, this->b - other.b, this->samples - other.samples); }
+__host__ __device__ void CudaColor::operator-=(const CudaColor other) { this->r -= other.r; this->g -= other.g; this->b -= other.b; this->samples -= other.samples; }
 __host__ __device__ CudaColor CudaColor::operator*(const float scale) const { return CudaColor(this->r * scale, this->g * scale, this->b * scale, this->samples); }
+__host__ __device__ void CudaColor::operator*=(const float scale) { *this = *this * scale; }
+__host__ __device__ CudaColor CudaColor::operator*(const CudaColor other) const {return CudaColor(this->r * other.r, this->g * other.g, this->b * other.b, this->samples + other.samples);}
 __host__ __device__ bool CudaColor::operator==(const CudaColor other) {return this->r == other.r & this->g == other.g & this->b == other.b;}
-__host__ __device__ CudaColor CudaColor::output() { return CudaColor(clamp(this->r / this->samples, 0.0f, 1.0f), clamp(this->g / this->samples, 0.0f, 1.0f), clamp(this->b / this->samples, 0.0f, 1.0f)); }
+__host__ __device__ void CudaColor::sample() {this->samples++;}
+__host__ __device__ void CudaColor::sample(int samples) {this->samples += samples;}
+//__host__ __device__ CudaColor CudaColor::output() { return CudaColor(clamp(this->r / this->samples, 0.0f, 1.0f), clamp(this->g / this->samples, 0.0f, 1.0f), clamp(this->b / this->samples, 0.0f, 1.0f)); }
+__host__ __device__ CudaColor CudaColor::output() { return CudaColor(clamp(this->r, 0.0f, 1.0f), clamp(this->g, 0.0f, 1.0f), clamp(this->b, 0.0f, 1.0f)); }
 __host__ __device__ float4 CudaColor::floatOutput() {
     CudaColor outputCol = this->output();
     return make_float4(outputCol.r, outputCol.g, outputCol.b, 1.0f);
@@ -82,17 +88,14 @@ __device__ void CudaSphere::checkRay(Ray ray, HitRecord* record) {
     float distanceToNearestPoint = toSphere * ray.direction.normalized();
     if (distanceToNearestPoint < 0) return; // sphere is behind ray
     float distanceToCenter = toSphere.magnitude();
-    float distanceCenterToRay = sqrt(distanceToCenter * distanceToCenter -
-                                     distanceToNearestPoint *
-                                     distanceToNearestPoint);
+    float distanceCenterToRay = sqrt((distanceToCenter * distanceToCenter)
+            - (distanceToNearestPoint * distanceToNearestPoint));
     if (distanceCenterToRay > this->radius) return;  // ray misses sphere
     float distanceBackToCollision = sqrt(this->radius * this->radius -
                                          distanceCenterToRay *
                                          distanceCenterToRay);
-    float distanceToCollision = distanceBackToCollision < 0 ? distanceToCenter +
-                                                              distanceBackToCollision
-                                                            : distanceToCenter +
-                                                              -distanceBackToCollision;
+    float distanceToCollision = distanceToNearestPoint - distanceBackToCollision > 0 ?
+            distanceToNearestPoint - distanceBackToCollision : distanceToNearestPoint + distanceBackToCollision;
     if (distanceToCollision > record->distance) return;  // not closest object
     record->distance = distanceToCollision;
     record->hitMaterial = this->material;
@@ -125,7 +128,7 @@ __host__ void World::setBackgroundColor(CudaColor* backgroundColorIn) {
     checkCudaErrors(cudaMemcpy((void*)this->backgroundColor, (void*)backgroundColorIn, sizeof(CudaColor), cudaMemcpyDefault));
 }
 
-__device__ void World::checkRay(Ray ray, HitRecord* record) {
+__device__ void World::checkRay(Ray ray, HitRecord* record) const {
     for(int i = 0; i < *deviceNumSpheres; i++) {
         deviceSpheres[i].checkRay(ray, record);
     }
@@ -135,9 +138,35 @@ __device__ __host__ World::~World() {  // TODO free device memory
     //cudaFree(deviceSpheres);
 }
 
-Camera::Camera(vec3 origin, float zoom, int width, int height) : origin(origin), zoom(zoom), width(width), height(height) {};
+Camera::Camera(Ray ray, float zoom, int width, int height) : ray(ray), zoom(zoom), width(width), height(height) {};
 
-__device__ CudaColor shade(Ray ray, World world, int bouncesRemaining, curandState* state) {
+vec3 Camera::getForward() { return ray.direction.normalized(); }
+
+vec3 Camera::getSide() { return ray.direction.cross(vec3(0,1,0)).normalized(); }
+
+__device__ CudaColor shade(Ray ray, const World world, int bouncesRemaining, curandState* state) {
+    CudaColor pixelColor(0,0,0,0);
+    float depthMultiplier = 1.0f;  // every further bounce contributes less to the final color
+    for(int i = 0; i < bouncesRemaining; i++) {
+        HitRecord record;
+        world.checkRay(ray, &record);
+        if(record.distance < INFINITY) {  // hit something
+            CudaColor hitColor = record.hitMaterial.color;
+            if(hitColor.r > 1.0f || hitColor.g > 1.0f || hitColor.b > 1.0f) {  // hit emissive material
+                pixelColor += hitColor * depthMultiplier;
+                break;
+            }
+            // "recursive" bounce
+            pixelColor += hitColor * depthMultiplier;
+            ray = Ray(record.position, (record.normal.normalized() +
+                                        vec3::randomInUnitSphere(state)).normalized());
+        } else {  // hit background
+            pixelColor += (*world.backgroundColor * depthMultiplier);
+            break;
+        }
+        depthMultiplier *= 0.5f;
+    }
+    return pixelColor;
 
     HitRecord record = HitRecord();
     world.checkRay(ray, &record);
@@ -170,7 +199,7 @@ __global__  void initKernel(int width, int height, curandState *states, CudaColo
 }
 
 __global__ void renderFrameKernel(float4 *out_data, CudaColor *colorBuffer, curandState *states,
-                                  World world, Camera camera, int samples, int bounceLimit,
+                                  const World world, const Camera camera, int samples, int bounceLimit,
                                   bool clearFrame) {
     int x = threadIdx.x + blockIdx.x * blockDim.x;
     int y = threadIdx.y + blockIdx.y * blockDim.y;
@@ -179,7 +208,7 @@ __global__ void renderFrameKernel(float4 *out_data, CudaColor *colorBuffer, cura
     int pixelIndex = y * camera.width + x;
     if (clearFrame) colorBuffer[pixelIndex] = CudaColor(0, 0, 0, 0);
     //if(pixelIndex == 0) world.deviceSpheres[4].location.x-=.1f;
-    Ray cameraRay = Ray(camera.origin, vec3((x - camera.width / 2) /
+    Ray cameraRay = Ray(camera.ray.origin, vec3((x - camera.width / 2) /
                                             static_cast<float>(camera.width),
                                             (y - camera.height / 2) /
                                             static_cast<float>(camera.width),
@@ -188,33 +217,30 @@ __global__ void renderFrameKernel(float4 *out_data, CudaColor *colorBuffer, cura
     for (int s = 0; s < samples; s++) {
         colorBuffer[pixelIndex] += shade(cameraRay, world, bounceLimit,
                                          &states[pixelIndex]);
+        //colorBuffer[pixelIndex].sample();
     }
+    colorBuffer[pixelIndex] *= (1.0f/static_cast<float>(samples * 2));
     out_data[pixelIndex] = colorBuffer[pixelIndex].floatOutput();
 }
 
-CudaTracer::CudaTracer(World world, Camera camera, GLuint openGLPixelBuffer) : world(world), camera(camera), numPixels(camera.width * camera.height), tileWidth(16), tileHeight(16) {  // TODO magic tileWidth/height
+CudaTracer::CudaTracer(World world, Camera camera, GLuint openGLPixelBuffer) : world(world), camera(camera), numPixels(camera.width * camera.height), tileWidth(16), tileHeight(16), bounceLimit(5) {  // TODO magic tileWidth/height
     checkCudaErrors(cudaGraphicsGLRegisterBuffer(&cudaFrameBuffer, openGLPixelBuffer, cudaGraphicsMapFlagsWriteDiscard));
-    checkCudaErrors(cudaMallocManaged(&this->curandStates, numPixels * sizeof(curandState)));
-    blocks = dim3(camera.width / tileWidth + 1, camera.height / tileHeight + 1);
-    threads = dim3(tileWidth, tileHeight);
-    this->cudaColorBuffer = (CudaColor*)fixed_cudaMalloc(numPixels * sizeof(CudaColor));
-    initKernel <<<blocks, threads >>> (camera.width, camera.height, this->curandStates, this->cudaColorBuffer);
+    init();
 }
 
-CudaTracer::CudaTracer() : camera(vec3(0,0,0), 1.0f, 1920, 1080), tileWidth(16), tileHeight(16) {}
+CudaTracer::CudaTracer() : camera(Ray(vec3(0,0,0), vec3(0,0,1.0f)), 1.0f, 1920, 1080), tileWidth(16), tileHeight(16), bounceLimit(5) {}
 
 void CudaTracer::setWorld(World wold) {this->world = world;}
 void CudaTracer::setCamera(Camera camera) { this->camera = camera; this->numPixels = camera.width * camera.height;}
-Camera CudaTracer::getCamera() {return camera;}
 //void CudaTracer::setGLPixelBuffer(GLuint openGLPixelBuffer) {this->openGLPixelBuffer = openGLPixelBuffer;}
 void CudaTracer::setSamples(int samples) {this->numSamples = samples;}
 
 void CudaTracer::init() {
     checkCudaErrors(cudaMallocManaged(&this->curandStates, numPixels * sizeof(curandState)));
     blocks = dim3(camera.width / tileWidth + 1, camera.height / tileHeight + 1);
-    threads = dim3(tileWidth, tileHeight);
+    threadsPerBlock = dim3(tileWidth, tileHeight);
     this->cudaColorBuffer = (CudaColor*)fixed_cudaMalloc(camera.width * camera.height * sizeof(CudaColor));
-    initKernel <<<blocks, threads >>> (camera.width, camera.height, this->curandStates, this->cudaColorBuffer);
+    initKernel <<<blocks, threadsPerBlock >>> (camera.width, camera.height, this->curandStates, this->cudaColorBuffer);
     checkCudaErrors(cudaDeviceSynchronize());
 }
 
@@ -223,7 +249,7 @@ void CudaTracer::renderFrame(bool clearFrame) {
     size_t numBytes;
     checkCudaErrors(cudaGraphicsMapResources(1, &cudaFrameBuffer, 0));
     checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void**)&frameBuffer, &numBytes, cudaFrameBuffer));
-    renderFrameKernel<<<blocks,threads>>>(frameBuffer, cudaColorBuffer, curandStates, world, camera, numSamples, this->bounceLimit, clearFrame);
+    renderFrameKernel<<<blocks,threadsPerBlock>>>(frameBuffer, cudaColorBuffer, curandStates, world, camera, numSamples, this->bounceLimit, clearFrame);
     checkCudaErrors(cudaDeviceSynchronize());
     checkCudaErrors(cudaGraphicsUnmapResources(1, &cudaFrameBuffer, 0));
 }
