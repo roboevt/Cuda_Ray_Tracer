@@ -55,7 +55,7 @@ __device__  vec3 vec3::randomInUnitSphere(curandState* state) {
 __host__ __device__ CudaColor::CudaColor(float r, float g, float b) : r(r), g(g), b(b), samples(1) {}
 __host__ __device__ CudaColor::CudaColor(float r, float g, float b, int samples) : r(r), g(g), b(b), samples(samples) {}
 __host__ __device__ CudaColor  CudaColor::operator+(const CudaColor other) const { return CudaColor(this->r + other.r, this->g + other.g, this->b + other.b, this->samples + other.samples); }
-__host__ __device__ void CudaColor::operator+=(const CudaColor other) { this->r += other.r; this->g += other.g; this->b += other.b; this->samples += other.samples; }
+__host__ __device__ void CudaColor::operator+=(const CudaColor other) { this->r += other.r; this->g += other.g; this->b += other.b; this->samples += other.samples + 1; }
 __host__ __device__ CudaColor CudaColor::operator-(const CudaColor other) const { return CudaColor(this->r - other.r, this->g - other.g, this->b - other.b, this->samples - other.samples); }
 __host__ __device__ void CudaColor::operator-=(const CudaColor other) { this->r -= other.r; this->g -= other.g; this->b -= other.b; this->samples -= other.samples; }
 __host__ __device__ CudaColor CudaColor::operator*(const float scale) const { return CudaColor(this->r * scale, this->g * scale, this->b * scale, this->samples); }
@@ -64,8 +64,8 @@ __host__ __device__ CudaColor CudaColor::operator*(const CudaColor other) const 
 __host__ __device__ bool CudaColor::operator==(const CudaColor other) {return this->r == other.r & this->g == other.g & this->b == other.b;}
 __host__ __device__ void CudaColor::sample() {this->samples++;}
 __host__ __device__ void CudaColor::sample(int samples) {this->samples += samples;}
-//__host__ __device__ CudaColor CudaColor::output() { return CudaColor(clamp(this->r / this->samples, 0.0f, 1.0f), clamp(this->g / this->samples, 0.0f, 1.0f), clamp(this->b / this->samples, 0.0f, 1.0f)); }
-__host__ __device__ CudaColor CudaColor::output() { return CudaColor(clamp(this->r, 0.0f, 1.0f), clamp(this->g, 0.0f, 1.0f), clamp(this->b, 0.0f, 1.0f)); }
+__host__ __device__ CudaColor CudaColor::output() { return CudaColor(clamp(this->r / this->samples, 0.0f, 1.0f), clamp(this->g / this->samples, 0.0f, 1.0f), clamp(this->b / this->samples, 0.0f, 1.0f)); }
+//__host__ __device__ CudaColor CudaColor::output() { return CudaColor(clamp(this->r, 0.0f, 1.0f), clamp(this->g, 0.0f, 1.0f), clamp(this->b, 0.0f, 1.0f)); }
 __host__ __device__ float4 CudaColor::floatOutput() {
     CudaColor outputCol = this->output();
     return make_float4(outputCol.r, outputCol.g, outputCol.b, 1.0f);
@@ -148,9 +148,13 @@ __device__ CudaColor shade(Ray ray, const World world, int bouncesRemaining, cur
     CudaColor pixelColor(0,0,0,0);
     float depthMultiplier = 1.0f;  // every further bounce contributes less to the final color
     for(int i = 0; i < bouncesRemaining; i++) {
+        depthMultiplier *= 0.5f;
         HitRecord record;
         world.checkRay(ray, &record);
-        if(record.distance < INFINITY) {  // hit something
+        if(record.distance == INFINITY) {  // hit nothing
+            pixelColor += (*(world.backgroundColor) * depthMultiplier);
+            break;
+        } else {  // hit something
             CudaColor hitColor = record.hitMaterial.color;
             if(hitColor.r > 1.0f || hitColor.g > 1.0f || hitColor.b > 1.0f) {  // hit emissive material
                 pixelColor += hitColor * depthMultiplier;
@@ -160,11 +164,9 @@ __device__ CudaColor shade(Ray ray, const World world, int bouncesRemaining, cur
             pixelColor += hitColor * depthMultiplier;
             ray = Ray(record.position, (record.normal.normalized() +
                                         vec3::randomInUnitSphere(state)).normalized());
-        } else {  // hit background
-            pixelColor += (*world.backgroundColor * depthMultiplier);
-            break;
+
         }
-        depthMultiplier *= 0.5f;
+
     }
     return pixelColor;
 
@@ -219,7 +221,7 @@ __global__ void renderFrameKernel(float4 *out_data, CudaColor *colorBuffer, cura
                                          &states[pixelIndex]);
         //colorBuffer[pixelIndex].sample();
     }
-    colorBuffer[pixelIndex] *= (1.0f/static_cast<float>(samples * 2));
+    //colorBuffer[pixelIndex] *= (1.0f/static_cast<float>(samples));
     out_data[pixelIndex] = colorBuffer[pixelIndex].floatOutput();
 }
 

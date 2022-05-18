@@ -13,11 +13,10 @@ int main(void)
     sphere2.color = Color(1.0f, 1.0f, 1.0f);
     Sphere sphere3 = Sphere(0.0f, -100.0f, 8.0f, 100.0f);
     sphere3.color = Color(1, 1, 1);
-    Sphere sphere4 = Sphere(0.0f, 5.5f, 4.0f, 0.5f);
-    sphere4.color = Color(150, 150, 150);
-    sphere4.color = Color(1, 1, 1);
-    Sphere sphere5 = Sphere(1.5f, 0.2f, 5.5f, 0.2f);
-    sphere5.color = Color(40, 15, 10);
+    Sphere sphere4 = Sphere(0.0f, 2.0f, 8.0f, 0.5f);
+    sphere4.color = Color(1, .2F, .3f);
+    Sphere sphere5 = Sphere(1.25f, 0.2f, 6.5f, 0.2f);
+    sphere5.color = Color(100, 50, 40);
     //sphere5.color = Color(0, 1, 1);
 
     RayTracer rayTracer(&window);

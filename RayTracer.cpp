@@ -7,7 +7,7 @@
 
 namespace {
     CudaTracer tracer;
-    CudaColor backgroundColor(.10f,.10f,.10f);
+    CudaColor backgroundColor(10.10f,10.10f,10.10f);
 }
 
 Color::Color(float r, float g, float b) : r(r), g(g), b(b) {}
