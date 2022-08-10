@@ -1,7 +1,8 @@
 #include "RayTracer.h"
 
-constexpr int width = 640;
-constexpr int height = 480;
+constexpr int width = 1280;
+constexpr int height = 720;
+constexpr int samples = 100;
 
 int main(void)
 {
@@ -17,12 +18,11 @@ int main(void)
     sphere4.color = Color(1, .2F, .3f);
     Sphere sphere5 = Sphere(1.25f, 0.2f, 6.5f, 0.2f);
     sphere5.color = Color(100, 50, 40);
-    //sphere5.color = Color(0, 1, 1);
 
     RayTracer rayTracer(&window);
     Sphere spheres[] = {sphere, sphere2,  sphere3,sphere4, sphere4, sphere5};
     rayTracer.addSpheres(spheres, 6);
-    rayTracer.setSamples(500);
+    rayTracer.setSamples(samples);
     rayTracer.init();
     printf("Done initialization\n");
 

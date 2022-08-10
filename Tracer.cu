@@ -6,7 +6,6 @@
 #include "Tracer.cuh"
 
 
-
 void check_cuda(cudaError_t result, char const* const func, const char* const file, int const line) {
     if (result) {
         std::cerr << "CUDA error = " << static_cast<unsigned int>(result) << " at " <<
@@ -50,6 +49,7 @@ __device__  vec3 vec3::randomInUnitSphere(curandState* state) {
         temp = vec3(newX, newY, newZ);
     }
     return temp;
+    //return vec3(1,1,1);
 }
 
 __host__ __device__ CudaColor::CudaColor(float r, float g, float b) : r(r), g(g), b(b), samples(1) {}
@@ -86,7 +86,7 @@ __host__ __device__ CudaSphere::CudaSphere() {}
 __device__ void CudaSphere::checkRay(Ray ray, HitRecord* record) {
     vec3 toSphere = this->location - ray.origin;
     float distanceToNearestPoint = toSphere * ray.direction.normalized();
-    if (distanceToNearestPoint < 0) return; // sphere is behind ray
+    if (distanceToNearestPoint <= 0) return; // sphere is behind ray
     float distanceToCenter = toSphere.magnitude();
     float distanceCenterToRay = sqrt((distanceToCenter * distanceToCenter)
             - (distanceToNearestPoint * distanceToNearestPoint));
@@ -205,24 +205,33 @@ __global__ void renderFrameKernel(float4 *out_data, CudaColor *colorBuffer, cura
                                   bool clearFrame) {
     int x = threadIdx.x + blockIdx.x * blockDim.x;
     int y = threadIdx.y + blockIdx.y * blockDim.y;
+    extern __shared__ char shared_mem[];
+    CudaColor* color_share = (CudaColor*)shared_mem;
+    curandState* states_share = (curandState*)(shared_mem + (blockDim.x * blockDim.y) * sizeof(CudaColor));
     if (x >= camera.width || y >= camera.height)
         return;  // Out of bounds of image, no point rendering
     int pixelIndex = y * camera.width + x;
-    if (clearFrame) colorBuffer[pixelIndex] = CudaColor(0, 0, 0, 0);
+    int shareIndex = threadIdx.y * blockDim.x + threadIdx.x;
+    //shareIndex = 100;  // Why does this work fine?????
+    if (clearFrame) {
+        color_share[shareIndex] = CudaColor(0, 0, 0, 0);  // Comment this line out for a view into GPU memory
+    }
+    else {
+        color_share[shareIndex] = colorBuffer[pixelIndex];
+    }
+    states_share[shareIndex] = states[pixelIndex];
+    __syncthreads();
     //if(pixelIndex == 0) world.deviceSpheres[4].location.x-=.1f;
     Ray cameraRay = Ray(camera.ray.origin, vec3((x - camera.width / 2) /
                                             static_cast<float>(camera.width),
                                             (y - camera.height / 2) /
                                             static_cast<float>(camera.width),
                                             camera.zoom));
-
     for (int s = 0; s < samples; s++) {
-        colorBuffer[pixelIndex] += shade(cameraRay, world, bounceLimit,
-                                         &states[pixelIndex]);
-        //colorBuffer[pixelIndex].sample();
+        color_share[shareIndex] += shade(cameraRay, world, bounceLimit,
+                                         &states_share[shareIndex]);
     }
-    //colorBuffer[pixelIndex] *= (1.0f/static_cast<float>(samples));
-    out_data[pixelIndex] = colorBuffer[pixelIndex].floatOutput();
+    out_data[pixelIndex] = color_share[shareIndex].floatOutput();
 }
 
 CudaTracer::CudaTracer(World world, Camera camera, GLuint openGLPixelBuffer) : world(world), camera(camera), numPixels(camera.width * camera.height), tileWidth(16), tileHeight(16), bounceLimit(5) {  // TODO magic tileWidth/height
@@ -238,6 +247,7 @@ void CudaTracer::setCamera(Camera camera) { this->camera = camera; this->numPixe
 void CudaTracer::setSamples(int samples) {this->numSamples = samples;}
 
 void CudaTracer::init() {
+    cudaDeviceSetSharedMemConfig(static_cast<cudaSharedMemConfig>(cudaFuncCachePreferEqual));
     checkCudaErrors(cudaMallocManaged(&this->curandStates, numPixels * sizeof(curandState)));
     blocks = dim3(camera.width / tileWidth + 1, camera.height / tileHeight + 1);
     threadsPerBlock = dim3(tileWidth, tileHeight);
@@ -251,7 +261,8 @@ void CudaTracer::renderFrame(bool clearFrame) {
     size_t numBytes;
     checkCudaErrors(cudaGraphicsMapResources(1, &cudaFrameBuffer, 0));
     checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void**)&frameBuffer, &numBytes, cudaFrameBuffer));
-    renderFrameKernel<<<blocks,threadsPerBlock>>>(frameBuffer, cudaColorBuffer, curandStates, world, camera, numSamples, this->bounceLimit, clearFrame);
+    int shareSize = tileWidth * tileHeight * sizeof(CudaColor) + tileWidth * tileHeight * sizeof(curandState);
+    renderFrameKernel<<<blocks,threadsPerBlock, shareSize>>>(frameBuffer, cudaColorBuffer, curandStates, world, camera, numSamples, this->bounceLimit, clearFrame);
     checkCudaErrors(cudaDeviceSynchronize());
     checkCudaErrors(cudaGraphicsUnmapResources(1, &cudaFrameBuffer, 0));
 }
